@@ -1,0 +1,14 @@
+{
+    "intents": [
+        {"tag": "greeting",
+            "patterns": ["hi", "How are you", "Is anyone there?", "hello", "Good day"],
+            "responses": ["Hello, Good to see you again", "Hi there, how can I help?"],
+            "context_set": ""
+          },
+          {"tag": "flowers",
+            "patterns": ["need flowers","is flower available", "flower"],
+            "responses": ["yes we have"],
+            "context_set": ""
+          }
+    ]
+}

@@ -1,0 +1,7 @@
+{
+    "entity": [
+        {"tag": "flower",
+            "value": ["rose", "lilly","lotus","jasmine"]
+          }
+    ]
+}

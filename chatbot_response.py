@@ -1,6 +1,8 @@
+botName =raw_input("enter Bot Name : ")
+print(botName+'.json')
 # restore all of our data structures
 import pickle
-data = pickle.load( open( "training_data", "rb" ) )
+data = pickle.load( open( botName+"_training_data", "rb" ) )
 words = data['words']
 classes = data['classes']
 train_x = data['train_x']
@@ -17,7 +19,7 @@ import random
 
 # import our chat-bot intents file
 import json
-with open('intents.json') as json_data:
+with open(botName+'.json') as json_data:
     intents = json.load(json_data)
 
 # load our saved model
@@ -26,9 +28,9 @@ net = tflearn.fully_connected(net, 8)
 net = tflearn.fully_connected(net, 8)
 net = tflearn.fully_connected(net, len(train_y[0]), activation='softmax')
 net = tflearn.regression(net)
-model = tflearn.DNN(net, tensorboard_dir='tflearn_logs')
+model = tflearn.DNN(net, tensorboard_dir=botName+'_logs')
 # load our saved model
-model.load('./model.tflearn')
+model.load('./'+botName+'.tflearn')
 def clean_up_sentence(sentence):
     # tokenize the pattern
     sentence_words = nltk.word_tokenize(sentence)
@@ -48,7 +50,7 @@ def bow(sentence, words, show_details=False):
                 bag[i] = 1
                 if show_details:
                     print ("found in bag: %s" % w)
-
+    print(bag,"bag")
     return(np.array(bag))
 
 # create a data structure to hold user context
@@ -57,7 +59,9 @@ context = {}
 ERROR_THRESHOLD = 0.25
 def classify(sentence):
     # generate probabilities from the model
+    print(words)
     results = model.predict([bow(sentence, words)])[0]
+    print(results)
     # filter out predictions below a threshold
     results = [[i,r] for i,r in enumerate(results) if r>ERROR_THRESHOLD]
     # sort by strength of probability
@@ -70,6 +74,7 @@ def classify(sentence):
 
 def response(sentence, userID='123', show_details=False):
     results = classify(sentence)
+    # print(results)
     # if we have a classification then find the matching intent tag
     if results:
         # loop as long as there are matches to process

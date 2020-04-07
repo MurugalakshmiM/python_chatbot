@@ -13,10 +13,13 @@ import tflearn
 import tensorflow as tf
 import random
 
+botName =raw_input("enter Bot Name : ")
 # import our chat-bot intents file
 import json
-with open('intents.json') as json_data:
+with open(botName+'.json') as json_data:
     intents = json.load(json_data)
+with open('entity.json') as entity_data:
+    entity = json.load(entity_data)
 
 words = []
 classes = []
@@ -27,14 +30,23 @@ for intent in intents['intents']:
     for pattern in intent['patterns']:
         # tokenize each word in the sentence
         w = word_tokenize(pattern)
+        entity_list = []
         # add to our words list
         words.extend(w)
+        for entityWord in w:
+            for en in entity["entity"]:
+                if en["tag"] == entityWord:
+                    entity_list = en["value"]
+
+        w.extend(entity_list)
         # add to documents in our corpus
         documents.append((w, intent['tag']))
         # add to our classes list
         if intent['tag'] not in classes:
             classes.append(intent['tag'])
-
+for en in entity['entity']:
+    for value in en["value"]: 
+        words.append(value)
 # stem and lower each word and remove duplicates
 words = [stemmer.stem(w.lower()) for w in words if w not in ignore_words]
 words = sorted(list(set(words)))
@@ -42,9 +54,9 @@ words = sorted(list(set(words)))
 # remove duplicates
 classes = sorted(list(set(classes)))
 
-print (len(documents), "documents")
-print (len(classes), "classes", classes)
-print (len(words), "unique stemmed words", words)
+# print (len(documents), "documents",documents)
+# print (len(classes), "classes", classes)
+# print (len(words), "unique stemmed words", words)
 
 # create our training data
 training = []
@@ -56,10 +68,18 @@ output_empty = [0] * len(classes)
 for doc in documents:
     # initialize our bag of words
     bag = []
+    entityList = []
     # list of tokenized words for the pattern
     pattern_words = doc[0]
+    # for p_words in doc[0]:
+    #     for en in entity['entity']:
+    #         if p_words == en["tag"]:
+    #             for word in en["value"]:
+    #                 pattern_words.append(word)
+    #                 # words.append(word)
     # stem each word
     pattern_words = [stemmer.stem(word.lower()) for word in pattern_words]
+    # print(pattern_words)
     # create our bag of words array
     for w in words:
         bag.append(1) if w in pattern_words else bag.append(0)
@@ -69,6 +89,46 @@ for doc in documents:
     output_row[classes.index(doc[1])] = 1
 
     training.append([bag, output_row])
+
+
+
+
+# training set, bag of words for each sentence
+for doc in documents:
+    # initialize our bag of words
+    bag = []
+    entityList = []
+    # list of tokenized words for the pattern
+    pattern_words = doc[0]
+    for i,p_words in enumerate(doc[0]):
+        for en in entity['entity']:
+            if p_words == en["tag"]:
+                for word in en["value"]:
+                    pattern_words[i] = word
+                    pattern_words = [stemmer.stem(word.lower()) for word in pattern_words]
+                    bag = []
+                    for w in words:
+                        bag.append(1) if w in pattern_words else bag.append(0)
+                    output_row = list(output_empty)
+                    output_row[classes.index(doc[1])] = 1
+                    # print(training)
+                    print([bag, output_row], "bag")
+                    training.append([bag, output_row])
+                    print(training)
+                    # words.append(word)
+    # # stem each word
+    # pattern_words = [stemmer.stem(word.lower()) for word in pattern_words]
+    # # print(pattern_words)
+    # # create our bag of words array
+    # for w in words:
+    #     bag.append(1) if w in pattern_words else bag.append(0)
+
+    # # output is a '0' for each tag and '1' for current tag
+    # output_row = list(output_empty)
+    # output_row[classes.index(doc[1])] = 1
+
+    # training.append([bag, output_row])
+
 
 # shuffle our features and turn into np.array
 random.shuffle(training)
@@ -88,11 +148,11 @@ net = tflearn.fully_connected(net, len(train_y[0]), activation='softmax')
 net = tflearn.regression(net)
 
 # Define model and setup tensorboard
-model = tflearn.DNN(net, tensorboard_dir='tflearn_logs')
+model = tflearn.DNN(net, tensorboard_dir='restaurant_logs')
 # Start training (apply gradient descent algorithm)
 model.fit(train_x, train_y, n_epoch=1000, batch_size=8, show_metric=True)
-model.save('model.tflearn')
-
+model.save(botName+'.tflearn')
 # save all of our data structures
 import pickle
-pickle.dump( {'words':words, 'classes':classes, 'train_x':train_x, 'train_y':train_y}, open( "training_data", "wb" ) )
+pickle.dump( {'words':words, 'classes':classes, 'train_x':train_x, 'train_y':train_y}, open( botName+"_training_data", "wb" ) )
+print(tflearn.variables.get_all_trainable_variable ())
